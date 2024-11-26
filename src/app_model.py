@@ -6,6 +6,7 @@ import uvicorn
 import os
 import pickle
 import pandas as pd
+from typing import List, Tuple
 from typing import Optional
 
 # Inicialización FastAPI y modelo
@@ -29,11 +30,11 @@ CREATE TABLE IF NOT EXISTS advertising (
 """)
 df.to_sql("advertising", conn, if_exists="replace", index=True) #Finalmente, pasamos a database.
 
-class Data(BaseModel):
-    tv: float
-    radio: float
-    newspaper: float
-    sales: Optional[float] = None
+class DataPredict(BaseModel):
+    data: List[list[float, float, float]]
+
+class DataIngest(BaseModel):
+    data: List[list[float, float, float]]
 
 # Mostrar un saludo 
 @app.get("/")
@@ -52,31 +53,33 @@ async def show_database():
         raise HTTPException(status_code=500, detail={str(e)})
 
 # 1. Endpoint de predicción
-@app.post("/predict")
-async def predict_sales(data: Data):
-    try:
-        data = data.model_dump()
-        X = [[data['tv'], data['radio'], data['newspaper']]]
-        prediction = model.predict(X)[0]
-        return {"Sales prediction":prediction}
-    except Exception as e: 
-        raise HTTPException(status_code=500, detail=str(e))
+@app.get("/predict")
+async def predict_sales(data: DataPredict):
+    if len(data.data[0]) == 3:
+        try:
+            prediction = model.predict(data.data)[0]
+            return {"prediction":prediction}
+        except Exception as e: 
+            raise HTTPException(status_code=500, detail=str(e))
+    else:
+        raise HTTPException(status_code=400, detail=f"Tienes que pasar 3 datos. ej: [[10.3, 300.5, 150.70]]. {str(e)}")
+    
 # 2. Endpoint de ingesta de datos
 @app.post("/ingest")
-async def ingest_data(data: Data):
-    try:
-        data = data.model_dump()
-        cursor.execute(
-                """
-                    INSERT INTO advertising (tv, radio, newspaper, sales)
-                    VALUES (?, ?, ?, ?)
-                """,
-                (data['tv'], data['radio'], data['newspaper'], data['sales'])
-            )
-        conn.commit()
-        return {"message": f"Expenses added successfully"}
-    except:
-        raise HTTPException(status_code=500, detail=str(e))
+async def ingest_data(data: DataIngest):
+    if len(data.data[0]) == 4:
+        try:
+            cursor.execute(
+                    """
+                        INSERT INTO advertising (tv, radio, newspaper, sales)
+                        VALUES (?, ?, ?, ?)
+                    """,
+                    (data.data[0][0], data.data[0][1], data.data[0][2], data.data[0][3])
+                )
+            conn.commit()
+            return {"message": "Datos ingresados correctamente"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 # 2. Endpoint de reentramiento del modelo
 @app.post("/retrain")
