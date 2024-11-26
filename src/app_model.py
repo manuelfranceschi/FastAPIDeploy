@@ -11,11 +11,11 @@ from typing import Optional
 
 # Inicialización FastAPI y modelo
 app = FastAPI()
-model = pickle.load(open('../model/advertising_model.pkl','rb'))
+model = pickle.load(open('./model/advertising_model.pkl','rb'))
 
 # CSV a db
-df = pd.read_csv("../data/Advertising.csv", index_col=0)
-conn = sqlite3.connect("../data/advertising.db") # Si no existe esta db, la crea. Es más que nada para que pueda hacer lo siguiente:
+df = pd.read_csv("./data/Advertising.csv", index_col=0)
+conn = sqlite3.connect("./data/advertising.db") # Si no existe esta db, la crea. Es más que nada para que pueda hacer lo siguiente:
 cursor = conn.cursor()
 
 #Gracias a esta función el id será autoincremental
