@@ -89,7 +89,7 @@ async def retrain_model():
         X = data[["TV", "radio", "newspaper"]]
         y = data["sales"]
         model.fit(X, y)
-        with open("../model/advertising_model.pkl", "wb") as file:
+        with open("./model/advertising_model.pkl", "wb") as file:
                 pickle.dump(model, file)
         return {'message': 'Modelo reentrenado correctamente.'}
     except Exception as e: 
